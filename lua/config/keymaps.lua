@@ -55,6 +55,9 @@ keymap.set("n", "J", "mzj`z")
 keymap.set("n", "<C-d>", "<C-d>zz")
 keymap.set("n", "<C-u>", "<C-u>zz")
 
+keymap.set("n", "<PageDown>", "<PageDown>zz")
+keymap.set("n", "<PageUp>", "<PageUp>zz")
+
 -- search term in the middle
 keymap.set("n", "n", "nzzzv")
 keymap.set("n", "N", "Nzzzv")

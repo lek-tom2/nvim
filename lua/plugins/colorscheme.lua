@@ -11,7 +11,7 @@ return {
         end,
     },
     ]]
-    --[[
+    
     {
         "ellisonleao/gruvbox.nvim",
         priority = 1000,
@@ -44,10 +44,10 @@ return {
         end,
         opts = ...,
     },
-    ]]
-    --
-    --[[
-    {
+    
+    
+  --[[
+  {
         "folke/tokyonight.nvim",
         lazy = false,
         priority = 1000,
@@ -87,8 +87,10 @@ return {
             on_highlights = function(highlights, colors) end,
             opts = {},
         }),
-    }, ]]
-    --
+    }, 
+  ]]-- 
+  --
+  --[[
     {
         "catppuccin/nvim",
         name = "catppuccin",
@@ -145,6 +147,7 @@ return {
         -- setup must be called before loading
         vim.cmd.colorscheme("catppuccin"),
     },
+    ]]--
     --[[
     {
         "gbprod/nord.nvim",
