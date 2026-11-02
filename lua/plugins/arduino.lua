@@ -6,9 +6,28 @@
 -- Override the board per project with a .nvim.lua / exrc or globally:
 --   vim.g.arduino_fqbn = "arduino:avr:nano"
 --   vim.g.arduino_port = "/dev/ttyUSB0"   -- optional, autodetected otherwise
+--
+-- Libraries live in ~/Arduino/libraries (arduino-cli lib install "<Name>").
+-- Restart the server after installing one: <leader>ar or :lsp restart (Neovim 0.12 syntax).
 
 local function fqbn()
   return vim.g.arduino_fqbn or "arduino:avr:uno"
+end
+
+local function lsp_cmd()
+  return {
+    "arduino-language-server",
+    "-cli", "arduino-cli",
+    "-cli-config", vim.fn.expand("~/.arduino15/arduino-cli.yaml"),
+    "-clangd", "clangd",
+    "-fqbn", fqbn(),
+  }
+end
+
+local function restart_lsp()
+  vim.lsp.config("arduino_language_server", { cmd = lsp_cmd() })
+  vim.cmd("lsp restart arduino_language_server")
+  vim.notify("Arduino LSP restarted (board: " .. fqbn() .. ")")
 end
 
 local function sketch_dir()
@@ -100,8 +119,64 @@ local function set_fqbn()
   }, function(choice)
     if choice then
       vim.g.arduino_fqbn = choice.fqbn
-      vim.notify("Arduino board set to " .. choice.fqbn .. " (restart LSP with :LspRestart)")
+      restart_lsp()
     end
+  end)
+end
+
+local function lib_list()
+  local out = vim.fn.system({ "arduino-cli", "lib", "list", "--json" })
+  local ok, data = pcall(vim.json.decode, out)
+  if not ok or type(data) ~= "table" then
+    vim.notify("Arduino: could not list libraries", vim.log.levels.ERROR)
+    return
+  end
+  local libs = {}
+  for _, l in ipairs(data.installed_libraries or {}) do
+    local lib = l.library or {}
+    table.insert(libs, { name = lib.name or "?", version = lib.version or "", dir = lib.install_dir or "" })
+  end
+  table.sort(libs, function(a, b)
+    return a.name < b.name
+  end)
+  if #libs == 0 then
+    vim.notify("Arduino: no libraries installed (use <leader>aL to install)", vim.log.levels.WARN)
+    return
+  end
+  vim.ui.select(libs, {
+    prompt = "Installed Arduino libraries (" .. #libs .. ") - pick one to open its examples/src",
+    format_item = function(l)
+      return l.name .. "  " .. l.version
+    end,
+  }, function(choice)
+    if choice and choice.dir ~= "" then
+      vim.cmd("edit " .. vim.fn.fnameescape(choice.dir))
+    end
+  end)
+end
+
+local function lib_install()
+  vim.ui.input({ prompt = "Search Arduino library: " }, function(query)
+    if not query or query == "" then
+      return
+    end
+    local out = vim.fn.system({ "arduino-cli", "lib", "search", "--names", "--json", query })
+    local ok, data = pcall(vim.json.decode, out)
+    if not ok or type(data) ~= "table" or #(data.libraries or {}) == 0 then
+      vim.notify("Arduino: no libraries found for '" .. query .. "'", vim.log.levels.WARN)
+      return
+    end
+    local names = {}
+    for _, l in ipairs(data.libraries) do
+      table.insert(names, l.name)
+    end
+    vim.ui.select(names, { prompt = "Install library" }, function(name)
+      if not name then
+        return
+      end
+      run_term({ "arduino-cli", "lib", "install", name })
+      vim.notify("After install finishes, press <leader>ar to restart the Arduino LSP")
+    end)
   end)
 end
 
@@ -119,13 +194,7 @@ return {
       servers = {
         arduino_language_server = {
           mason = false, -- use the system package (pacman -S arduino-language-server)
-          cmd = {
-            "arduino-language-server",
-            "-cli", "arduino-cli",
-            "-cli-config", vim.fn.expand("~/.arduino15/arduino-cli.yaml"),
-            "-clangd", "clangd",
-            "-fqbn", fqbn(),
-          },
+          cmd = lsp_cmd(),
           filetypes = { "arduino" },
           root_markers = { "sketch.yaml", "*.ino", ".git" },
           capabilities = {
@@ -165,6 +234,9 @@ return {
           map("<leader>aa", compile_upload, "Arduino: compile + upload")
           map("<leader>am", monitor, "Arduino: serial monitor")
           map("<leader>ab", set_fqbn, "Arduino: select board")
+          map("<leader>ar", restart_lsp, "Arduino: restart LSP")
+          map("<leader>al", lib_list, "Arduino: list installed libraries")
+          map("<leader>aL", lib_install, "Arduino: search + install library")
           map("<leader>ap", function()
             vim.notify("Arduino port: " .. (detect_port() or "none") .. "\nBoard: " .. fqbn())
           end, "Arduino: show port/board")
