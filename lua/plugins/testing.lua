@@ -98,7 +98,7 @@ return {
                         adapters[#adapters + 1] = config
                     elseif config ~= false then
                         local adapter = require(name)
-                        if type(config) == "table" and not vim.tbl_isempty(config) then
+                        if type(config) == "table" and next(config) ~= nil then
                             local meta = getmetatable(adapter)
                             if adapter.setup then
                                 adapter.setup(config)
@@ -120,7 +120,7 @@ return {
     keys = {
       { ";tt", function() require("neotest").run.run(vim.fn.expand("%")) end, desc = "Run File" },
       { ";tr", function() require("neotest").run.run() end, desc = "Run Nearest" },
-      { ";tT", function() require("neotest").run.run(vim.loop.cwd()) end, desc = "Run All Test Files" },
+      { ";tT", function() require("neotest").run.run(vim.uv.cwd()) end, desc = "Run All Test Files" },
       { ";tl", function() require("neotest").run.run_last() end, desc = "Run Last" },
       { ";ts", function() require("neotest").summary.toggle() end, desc = "Toggle Summary" },
       { ";to", function() require("neotest").output.open({ enter = true, auto_close = true }) end, desc = "Show Output" },

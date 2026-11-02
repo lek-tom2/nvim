@@ -10,12 +10,12 @@ vim.opt.rtp:prepend(vim.env.LAZY or lazypath)
 require("lazy").setup({
     spec = {
         -- add LazyVim and import its plugins
-        { "wakatime/vim-wakatime", lazy = false },
+        { "wakatime/vim-wakatime", event = "VeryLazy" },
         {
             "LazyVim/LazyVim",
             import = "lazyvim.plugins",
             opts = {
-                --            colorscheme = "gruvbox",
+                colorscheme = "hyprconfig",
             },
         },
         { import = "lazyvim.plugins.extras.linting.eslint" },
@@ -23,13 +23,33 @@ require("lazy").setup({
         { import = "lazyvim.plugins.extras.lang.typescript" },
         { import = "lazyvim.plugins.extras.lang.json" },
         { import = "lazyvim.plugins.extras.lang.tailwind" },
-        { import = "lazyvim.plugins.extras.linting.eslint" },
         { import = "lazyvim.plugins.extras.util.mini-hipatterns" },
         -- { import = "lazyvim.plugins.extras.lang.typescript" },
         -- { import = "lazyvim.plugins.extras.lang.json" },
         -- { import = "lazyvim.plugins.extras.ui.mini-animate" },
         -- import/override with your plugins
         { import = "plugins" },
+        {
+            "Exafunction/windsurf.nvim",
+            dependencies = {
+                "nvim-lua/plenary.nvim",
+                "hrsh7th/nvim-cmp",
+            },
+            config = function()
+                vim.keymap.set("i", "<C-g>", function()
+                    return vim.fn["codeium#Accept"]()
+                end, { expr = true, noremap = true })
+                vim.keymap.set("i", "<C-;>", function()
+                    return vim.fn["codeium#CycleCompletions"](1)
+                end, { expr = true, noremap = true })
+                vim.keymap.set("i", "<C-,>", function()
+                    return vim.fn["codeium#CycleCompletions"](-1)
+                end, { expr = true, noremap = true })
+                vim.keymap.set("i", "<C-x>", function()
+                    return vim.fn["codeium#Clear"]()
+                end, { expr = true, noremap = true })
+            end,
+        },
     },
     defaults = {
         -- By default, only LazyVim plugins will be lazy-loaded. Your custom plugins will load during startup.
@@ -40,7 +60,7 @@ require("lazy").setup({
         version = false, -- always use the latest git commit
         -- version = "*", -- try installing the latest stable version for plugins that support semver
     },
-    install = { colorscheme = { "tokyonight", "habamax" } },
+    install = { colorscheme = { "hyprconfig", "habamax" } },
     checker = { enabled = true }, -- automatically check for plugin updates
     performance = {
         rtp = {

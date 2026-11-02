@@ -1,6 +1,6 @@
 return {
     {
-        "williamboman/mason.nvim",
+        "mason-org/mason.nvim",
         opts = function(_, opts)
             vim.list_extend(opts.ensure_installed, {
                 "luacheck",
@@ -27,7 +27,7 @@ return {
                         return require("lspconfig.util").root_pattern(".git")(...)
                     end,
                 },
-                tsserver = {
+                ts_ls = {
                     root_dir = function(...)
                         return require("lspconfig.util").root_pattern(".git")(...)
                     end,
@@ -128,12 +128,5 @@ return {
             },
             setup = {},
         },
-    },
-    {
-        "nvim-cmp",
-        dependencies = { "hrsh7th/cmp-emoji" },
-        opts = function(_, opts)
-            table.insert(opts.sources, { name = "emoji" })
-        end,
     },
 }

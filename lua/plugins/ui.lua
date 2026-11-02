@@ -8,6 +8,10 @@ return {
     enabled = false,
   },
   {
+    "nvim-neo-tree/neo-tree.nvim",
+    enabled = false,
+  },
+  {
     "folke/noice.nvim",
     opts = function(_, opts)
       table.insert(opts.routes, {
@@ -141,7 +145,7 @@ return {
     keys = {
       {
 
-        "<leader>d",
+        "<leader>D",
         "<cmd>NvimTreeClose<cr><cmd>tabnew<cr><bar><bar><cmd>DBUI<cr>",
       },
     },
@@ -191,14 +195,7 @@ return {
           },
         },
         log = {
-          enable = true,
-          truncate = true,
-          types = {
-            diagnostics = true,
-            git = true,
-            profile = true,
-            watcher = true,
-          },
+          enable = false,
         },
       })
 
