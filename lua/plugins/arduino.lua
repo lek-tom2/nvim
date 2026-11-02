@@ -56,6 +56,45 @@ local function detect_port()
   return nil
 end
 
+-- arduino-cli requires the main file to be named after its folder: Foo/Foo.ino.
+-- Otherwise the language server's startup build fails and the server quits silently.
+local function sketch_problem(buf)
+  local path = vim.api.nvim_buf_get_name(buf)
+  if path == "" or not path:match("%.ino$") then
+    return nil
+  end
+  local dir = vim.fn.fnamemodify(path, ":p:h")
+  local dirname = vim.fn.fnamemodify(dir, ":t")
+  local expected = dir .. "/" .. dirname .. ".ino"
+  if vim.fn.filereadable(expected) == 1 then
+    return nil
+  end
+  return expected
+end
+
+local function fix_sketch_name(buf)
+  local expected = sketch_problem(buf)
+  if not expected then
+    vim.notify("Arduino: sketch layout is already correct")
+    return
+  end
+  local path = vim.api.nvim_buf_get_name(buf)
+  local others = vim.fn.glob(vim.fn.fnamemodify(path, ":p:h") .. "/*.ino", true, true)
+  if #others > 1 then
+    vim.notify("Arduino: several .ino files here, rename one to " .. vim.fn.fnamemodify(expected, ":t") .. " manually", vim.log.levels.WARN)
+    return
+  end
+  vim.cmd("silent! write")
+  local ok, err = os.rename(path, expected)
+  if not ok then
+    vim.notify("Arduino: rename failed: " .. tostring(err), vim.log.levels.ERROR)
+    return
+  end
+  vim.cmd("edit " .. vim.fn.fnameescape(expected))
+  vim.cmd("silent! bwipeout! " .. buf)
+  vim.notify("Arduino: renamed to " .. vim.fn.fnamemodify(expected, ":t") .. ", LSP starting")
+end
+
 local function run_term(cmd)
   vim.cmd("botright 15split")
   vim.fn.jobstart(cmd, { term = true })
@@ -196,7 +235,12 @@ return {
           mason = false, -- use the system package (pacman -S arduino-language-server)
           cmd = lsp_cmd(),
           filetypes = { "arduino" },
-          root_markers = { "sketch.yaml", "*.ino", ".git" },
+          root_dir = function(bufnr, on_dir)
+            if sketch_problem(bufnr) then
+              return
+            end
+            on_dir(vim.fn.fnamemodify(vim.api.nvim_buf_get_name(bufnr), ":p:h"))
+          end,
           capabilities = {
             textDocument = {
               semanticTokens = vim.NIL,
@@ -226,6 +270,18 @@ return {
         pattern = "arduino",
         callback = function(ev)
           vim.bo[ev.buf].commentstring = "// %s"
+          local expected = sketch_problem(ev.buf)
+          if expected then
+            vim.schedule(function()
+              vim.notify(
+                "Arduino: LSP will not start. The main file must be named after its folder:\n  "
+                  .. vim.fn.fnamemodify(expected, ":t")
+                  .. "\nPress <leader>af to rename it.",
+                vim.log.levels.WARN,
+                { title = "Arduino", timeout = 10000 }
+              )
+            end)
+          end
           local map = function(lhs, rhs, desc)
             vim.keymap.set("n", lhs, rhs, { buffer = ev.buf, desc = desc })
           end
@@ -235,6 +291,9 @@ return {
           map("<leader>am", monitor, "Arduino: serial monitor")
           map("<leader>ab", set_fqbn, "Arduino: select board")
           map("<leader>ar", restart_lsp, "Arduino: restart LSP")
+          map("<leader>af", function()
+            fix_sketch_name(ev.buf)
+          end, "Arduino: fix sketch file name")
           map("<leader>al", lib_list, "Arduino: list installed libraries")
           map("<leader>aL", lib_install, "Arduino: search + install library")
           map("<leader>ap", function()

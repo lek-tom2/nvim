@@ -33,7 +33,7 @@ LazyVim-based Neovim configuration for Neovim 0.11+. Uses lazy.nvim for plugin m
 - Completion: blink.cmp (LazyVim default) and nvim-cmp both in lock file
 - Windsurf/Codeium plugin provides AI completion with `<C-g>` accept binding
 - External tools expected: tmux (tmux-sessionizer), jq, tidy, lazygit
-- Arduino: `arduino-cli`, `arduino-language-server`, `avr-gcc`, `avr-libc`, `avrdude` from pacman; `arduino:avr` core installed; user in `uucp` group for serial. Board via `vim.g.arduino_fqbn` (default arduino:avr:uno). Libraries in `~/Arduino/libraries`. Neovim 0.12: restart LSP with `:lsp restart` (no `:LspRestart`)
+- Arduino: `arduino-cli`, `arduino-language-server`, `avr-gcc`, `avr-libc`, `avrdude` from pacman; `arduino:avr` core installed; user in `uucp` group for serial. Board via `vim.g.arduino_fqbn` (default arduino:avr:uno). Libraries in `~/Arduino/libraries`. Sketch main file must be `<folder>/<folder>.ino` or the LSP build fails and the server quits (config warns + `<leader>af` renames). Neovim 0.12: restart LSP with `:lsp restart` (no `:LspRestart`)
 
 ## When Editing This Config
 - Plugin specs in `lua/plugins/` are auto-imported by lazy.nvim
